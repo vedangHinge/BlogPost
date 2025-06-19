@@ -1,0 +1,44 @@
+package com.cdac.controller;
+
+import java.util.List;
+import java.util.UUID;
+
+import org.modelmapper.ModelMapper;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.cdac.Dto.CategoryAddDto;
+import com.cdac.entity.Category;
+import com.cdac.service.CategoryService;
+
+
+import jakarta.validation.Valid;
+import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
+
+@RestController
+@RequestMapping(path = "/api/v1/categories")
+@AllArgsConstructor
+public class CategoryController {
+	private CategoryService categoryService;
+	
+	@GetMapping
+	public ResponseEntity<?> listCategories(){
+		return ResponseEntity.ok(categoryService.listCategories());
+	}
+	@PostMapping
+	public ResponseEntity<?> addCategories(@Valid @RequestBody CategoryAddDto newCat){
+		return ResponseEntity.ok(categoryService.addNewCategory(newCat));
+	}
+	@DeleteMapping("/{id}")
+	public ResponseEntity<?> deleteCategory(@PathVariable UUID id){
+		categoryService.deleteCategory(id);
+		return ResponseEntity.noContent().build();
+	}
+}

@@ -1,0 +1,117 @@
+package com.cdac.service;
+
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import javax.crypto.SecretKey;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.stereotype.Component;
+
+import com.cdac.custom_exception.ResourceNotFoundException;
+import com.cdac.security.BlogUserDetails;
+
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
+
+@Component
+@Slf4j
+public class AuthenticationServiceImpl implements AuthenticationService{
+	private AuthenticationManager authManager;
+	private UserDetailsService userDetailService;
+	
+	@Value("${jwt.secret.key}")
+	private String secretKey;
+	
+	private Long jwtExpiryMs=86400000L;
+	private SecretKey key;
+	public AuthenticationServiceImpl(AuthenticationManager authManager,UserDetailsService userDetailService) {
+		this.authManager=authManager;
+		this.userDetailService=userDetailService;
+	}
+	@PostConstruct
+	public void init() {
+		key=Keys.hmacShaKeyFor(secretKey.getBytes());
+		//log.info("JWT key initialized: {}", Base64.getEncoder().encodeToString(key.getEncoded()));
+	}
+	@Override
+	public UserDetails authenticate(String email, String password) {
+		authManager.authenticate(new UsernamePasswordAuthenticationToken(email, password));
+		return userDetailService.loadUserByUsername(email);
+	}
+
+	@Override
+	public String generateToken(UserDetails userDetails) {
+		BlogUserDetails userPrinciple=(BlogUserDetails) userDetails;
+	Map<String,Object> claims=new HashMap<>();
+	return Jwts.builder()
+			.setSubject(userDetails.getUsername())
+			.setIssuedAt(new Date(System.currentTimeMillis()))
+			.setExpiration(new Date(System.currentTimeMillis()+jwtExpiryMs))
+			.claim("authorities",getAuthoritiesInString(userPrinciple.getAuthorities()))
+			.signWith(key,SignatureAlgorithm.HS256).compact();
+	}
+	@Override
+	public String getUserNameFromJwtToken(Claims claims) {
+		return claims.getSubject();
+	}
+	@Override	
+	public Claims validateJwtToken(String token) {
+		try {
+			Claims claims=Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody();
+			return claims;
+		}catch(Exception e) {
+			log.error(e.getMessage());
+			return null;
+		}
+		
+	}
+	private List<String> getAuthoritiesInString(Collection<? extends GrantedAuthority> authorities){
+		return authorities.stream().map(auth->auth.getAuthority()).collect(Collectors.toList());
+	}
+	public List<GrantedAuthority> getAuthoritiesFromClaims(Claims claims){
+		List<String> authorityNamesFromJwt=(List<String>)claims.get("authorities");
+		List<GrantedAuthority> authorities=authorityNamesFromJwt.stream()
+				.map(authorityName->new SimpleGrantedAuthority(authorityName))
+				.collect(Collectors.toList());
+		return authorities;
+	}
+	@Override
+	public Authentication populateAuthenticationTokenFromJWT(String jwt) {
+	    log.info("Received JWT: {}", jwt);
+
+	    Claims payLoadClaims = validateJwtToken(jwt);
+	    if (payLoadClaims == null) {
+	        log.error("JWT validation failed - token is invalid or expired");
+	        throw new ResourceNotFoundException("Unauthenticated user");
+	    }
+
+	    log.info("JWT claims extracted: {}", payLoadClaims);
+
+	    String email = getUserNameFromJwtToken(payLoadClaims);
+	    log.info("Email from token: {}", email);
+
+	    List<GrantedAuthority> authorities = getAuthoritiesFromClaims(payLoadClaims);
+	    log.info("Authorities from token: {}", authorities);
+
+	    return new UsernamePasswordAuthenticationToken(email, null, authorities);
+	}
+
+
+}

@@ -1,0 +1,13 @@
+package com.cdac.repo;
+
+import java.util.UUID;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
+
+import com.cdac.entity.Tag;
+@Repository
+public interface TagsRepo extends JpaRepository<Tag, UUID>{
+	@Query("SELECT t from Tag")
+}

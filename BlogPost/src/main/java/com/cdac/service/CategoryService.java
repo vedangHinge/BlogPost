@@ -1,0 +1,19 @@
+package com.cdac.service;
+
+import java.util.List;
+import java.util.UUID;
+
+import com.cdac.Dto.ApiResponse;
+import com.cdac.Dto.CategoryAddDto;
+import com.cdac.Dto.CategoryDto;
+import com.cdac.entity.Category;
+
+
+
+
+public interface CategoryService {
+	List<CategoryDto> listCategories();
+	ApiResponse addNewCategory(CategoryAddDto newCat);
+	void deleteCategory(UUID id);
+	Category getCategoryById(UUID id);
+}

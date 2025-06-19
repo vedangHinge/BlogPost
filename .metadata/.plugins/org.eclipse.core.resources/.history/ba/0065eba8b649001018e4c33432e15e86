@@ -1,0 +1,71 @@
+package com.cdac.service;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.modelmapper.ModelMapper;
+import org.springframework.stereotype.Service;
+
+import com.cdac.Dto.ApiResponse;
+import com.cdac.Dto.TagCreateReqDto;
+import com.cdac.Dto.TagResponse;
+import com.cdac.custom_exception.ResourceNotFoundException;
+import com.cdac.entity.Tag;
+import com.cdac.repo.TagsRepo;
+
+import lombok.AllArgsConstructor;
+
+@Service
+@AllArgsConstructor
+public class TagServiceImpl implements TagService{
+
+	private TagsRepo tagRepo;
+	private ModelMapper mapper;
+	
+	@Override
+	public ApiResponse addNewTag(TagCreateReqDto tagDto) {
+	    Set<String> tagNames = tagDto.getNames();
+
+	    List<Tag> existingTags = tagRepo.findByNameIn(tagNames);
+	    Set<String> existingNames = existingTags.stream()
+	                                            .map(Tag::getName)
+	                                            .collect(Collectors.toSet());
+
+	    List<Tag> newTags = tagNames.stream()
+	                                .filter(name -> !existingNames.contains(name))
+	                                .map(name -> Tag.builder()
+	                                                .name(name)
+	                                                .posts(new HashSet<>())
+	                                                .build())
+	                                .toList();
+
+	    if (!newTags.isEmpty()) {
+	        tagRepo.saveAll(newTags);
+	    }
+
+	    return new ApiResponse("Tags saved successfully");
+	}
+
+	@Override
+	public List<TagResponse> getAllTags() {
+		List<Tag> tags=new ArrayList<>();
+		tags=tagRepo.findAllWithPostCounts();
+		if(tags.isEmpty()) {
+			throw new ResourceNotFoundException("No Tag found");
+		}
+		return tags.stream()
+				.map(a->{
+					TagResponse tagDto=mapper.map(a, TagResponse.class);
+					if(tagDto.getPostCount()==null) {
+						tagDto.setPostCount(a.getPosts()==null? 0:(Integer)a.getPosts().size());
+					}
+					return tagDto;
+				}).collect(Collectors.toList());
+	}
+
+	
+
+}

@@ -1,0 +1,11 @@
+package com.cdac.service;
+
+import org.springframework.security.core.userdetails.UserDetails;
+
+import io.jsonwebtoken.Claims;
+
+public interface AuthenticationService {
+UserDetails authenticate(String email,String password);
+String generateToken(UserDetails userDetails);
+Claims validateToken(String token);
+}
