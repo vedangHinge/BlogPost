@@ -23,8 +23,8 @@ public class PostDto {
 private UUID id;
 private String title;
 private String content;
-private AuthorDto author;
-private CategoryDto category;
+private AuthorDto myUser;
+private CategoryDto myCategory;
 private Set<TagDto> tags;
 private Integer readingTime;
 private LocalDateTime createdOn;

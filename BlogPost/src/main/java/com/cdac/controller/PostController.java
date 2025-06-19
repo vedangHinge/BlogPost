@@ -20,7 +20,6 @@ import com.cdac.entity.Post;
 import com.cdac.entity.User;
 import com.cdac.service.PostService;
 import com.cdac.service.UserService;
-import com.cdac.utils.SecurityUtils;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,9 +40,9 @@ public ResponseEntity<?> getAllPosts(
 	return ResponseEntity.ok(postService.getAllPosts(categoryId,tagId));
 }
 @GetMapping("/drafts")
-public ResponseEntity<?> getDrafts(){
-	User loggedInUser=userService.getById(SecurityUtils.getCurrentUserId());
-	return ResponseEntity.ok(loggedInUser);
+public ResponseEntity<?> getDrafts(@RequestAttribute UUID userId){
+	User loggedInUser=userService.getById(userId);
+	return ResponseEntity.ok(postService.getDraftPosts(loggedInUser));
 }
 
 

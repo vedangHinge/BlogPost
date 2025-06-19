@@ -29,6 +29,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
 	        throws ServletException, IOException {
 	    try {
+	    	log.info("JwtAuthenticationFilter hit for: {} {}", request.getMethod(), request.getRequestURI());
+
 	        String path = request.getRequestURI();
 
 //	        // Skip JWT filter for public endpoints
@@ -47,9 +49,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 	            String jwt = reqHeader.substring(7);
 
 	            Authentication authentication = authenticationService.populateAuthenticationTokenFromJWT(jwt);
-	            SecurityContextHolder.getContext().setAuthentication(authentication);
+	            
 
 	            if (authentication != null && authentication.isAuthenticated()) {
+	            	SecurityContextHolder.getContext().setAuthentication(authentication);
 	                Object principal = authentication.getPrincipal();
 	                if (principal instanceof BlogUserDetails blogUserDetails) {
 	                    request.setAttribute("userId", blogUserDetails.getId());

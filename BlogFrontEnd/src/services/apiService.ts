@@ -135,12 +135,21 @@ class ApiService {
 
   // Posts endpoints
   public async getPosts(params: {
-    categoryId?: string;
-    tagId?: string;
-  }): Promise<Post[]> {
-    const response: AxiosResponse<Post[]> = await this.api.get('/posts', { params });
-    return response.data;
-  }
+  categoryId?: string;
+  tagId?: string;
+}): Promise<Post[]> {
+  const response: AxiosResponse<any[]> = await this.api.get('/posts', { params });
+
+  // 🛠 Transform the response to match Post interface with `author` and `category`
+  const transformed = response.data.map((post) => ({
+    ...post,
+    author: post.myUser,         // map myUser → author
+    category: post.myCategory,   // map myCategory → category
+  }));
+
+  return transformed;
+}
+
 
   public async getPost(id: string): Promise<Post> {
     const response: AxiosResponse<Post> = await this.api.get(`/posts/${id}`);
@@ -162,13 +171,21 @@ class ApiService {
   }
 
   public async getDrafts(params: {
-    page?: number;
-    size?: number;
-    sort?: string;
-  }): Promise<Post[]> {
-    const response: AxiosResponse<Post[]> = await this.api.get('/posts/drafts', { params });
-    return response.data;
-  }
+  page?: number;
+  size?: number;
+  sort?: string;
+}): Promise<Post[]> {
+  const response: AxiosResponse<any[]> = await this.api.get('/posts/drafts', { params });
+
+  const transformed = response.data.map((post) => ({
+    ...post,
+    author: post.myUser,
+    category: post.myCategory,
+  }));
+
+  return transformed;
+}
+
 
   // Categories endpoints
   public async getCategories(): Promise<Category[]> {

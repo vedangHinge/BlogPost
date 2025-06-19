@@ -109,8 +109,8 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 
 	    List<GrantedAuthority> authorities = getAuthoritiesFromClaims(payLoadClaims);
 	    log.info("Authorities from token: {}", authorities);
-
-	    return new UsernamePasswordAuthenticationToken(email, null, authorities);
+	    UserDetails userDetails = userDetailService.loadUserByUsername(email);
+	    return new UsernamePasswordAuthenticationToken(userDetails, null, authorities);
 	}
 
 
